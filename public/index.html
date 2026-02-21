@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agent OS Builder</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- xterm.js CDN -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.min.css">
+</head>
+<body>
+  <!-- 頂部標題 -->
+  <header>
+    <div>
+      <h1>⚡ AGENT OS BUILDER</h1>
+      <div class="subtitle">自訂 Linux 映像 — 為 AI Agent 而生</div>
+    </div>
+    <div class="header-right">
+      <div id="image-size">💾 預估大小: 0 MB</div>
+    </div>
+  </header>
+
+  <div class="main">
+    <!-- 左側：套件選擇 -->
+    <div class="left-panel">
+
+      <div class="category">
+        <div class="category-title">🔧 基本工具 <span class="select-all" data-cat="basic">全選</span></div>
+        <label class="pkg-item"><input type="checkbox" data-pkg="busybox" data-size="2.1" checked><span class="pkg-name">BusyBox</span><span class="pkg-size">2.1 MB</span></label>
+        <label class="pkg-item"><input type="checkbox" data-pkg="coreutils" data-size="8.5"><span class="pkg-name">coreutils</span><span class="pkg-size">8.5 MB</span></label>
+        <label class="pkg-item"><input type="checkbox" data-pkg="util-linux" data-size="5.2"><span class="pkg-name">util-linux</span><span class="pkg-size">5.2 MB</span></label>
+      </div>
+
+      <div class="category">
+        <div class="category-title">🌐 網路 <span class="select-all" data-cat="net">全選</span></div>
+        <label class="pkg-item"><input type="checkbox" data-pkg="curl" data-size="3.8"><span class="pkg-name">curl</span><span class="pkg-size">3.8 MB</span></label>
+        <label class="pkg-item"><input type="checkbox" data-pkg="wget" data-size="2.9"><span class="pkg-name">wget</span><span class="pkg-size">2.9 MB</span></label>
+        <label class="pkg-item"><input type="checkbox" data-pkg="openssl" data-size="12.1"><span class="pkg-name">OpenSSL</span><span class="pkg-size">12.1 MB</span></label>
+        <label class="pkg-item"><input type="checkbox" data-pkg="dhcpcd" data-size="0.8"><span class="pkg-name">dhcpcd</span><span class="pkg-size">0.8 MB</span></label>
+        <label class="pkg-item"><input type="checkbox" data-pkg="openssh" data-size="4.5"><span class="pkg-name">openssh</span><span class="pkg-size">4.5 MB</span></label>
+        <label class="pkg-item"><input type="checkbox" data-pkg="iptables" data-size="1.2"><span class="pkg-name">iptables</span><span class="pkg-size">1.2 MB</span></label>
+      </div>
+
+      <div class="category">
+        <div class="category-title">💻 語言 <span class="select-all" data-cat="lang">全選</span></div>
+        <label class="pkg-item"><input type="checkbox" data-pkg="python3" data-size="45.2"><span class="pkg-name">Python 3</span><span class="pkg-size">45.2 MB</span></label>
+        <label class="pkg-item"><input type="checkbox" data-pkg="nodejs" data-size="32.8"><span class="pkg-name">Node.js</span><span class="pkg-size">32.8 MB</span></label>
+        <label class="pkg-item"><input type="checkbox" data-pkg="ruby" data-size="28.4"><span class="pkg-name">Ruby</span><span class="pkg-size">28.4 MB</span></label>
+        <label class="pkg-item"><input type="checkbox" data-pkg="lua" data-size="0.5"><span class="pkg-name">Lua</span><span class="pkg-size">0.5 MB</span></label>
+      </div>
+
+      <div class="category">
+        <div class="category-title">📝 編輯器 <span class="select-all" data-cat="editor">全選</span></div>
+        <label class="pkg-item"><input type="checkbox" data-pkg="vim" data-size="11.3"><span class="pkg-name">Vim</span><span class="pkg-size">11.3 MB</span></label>
+        <label class="pkg-item"><input type="checkbox" data-pkg="nano" data-size="2.1"><span class="pkg-name">nano</span><span class="pkg-size">2.1 MB</span></label>
+      </div>
+
+      <div class="category">
+        <div class="category-title">📊 監控 <span class="select-all" data-cat="mon">全選</span></div>
+        <label class="pkg-item"><input type="checkbox" data-pkg="htop" data-size="0.4"><span class="pkg-name">htop</span><span class="pkg-size">0.4 MB</span></label>
+        <label class="pkg-item"><input type="checkbox" data-pkg="strace" data-size="1.8"><span class="pkg-name">strace</span><span class="pkg-size">1.8 MB</span></label>
+        <label class="pkg-item"><input type="checkbox" data-pkg="lsof" data-size="0.3"><span class="pkg-name">lsof</span><span class="pkg-size">0.3 MB</span></label>
+      </div>
+
+      <div class="category">
+        <div class="category-title">🤖 Agent <span class="select-all" data-cat="agent">全選</span></div>
+        <label class="pkg-item"><input type="checkbox" data-pkg="agent-runtime" data-size="5.6"><span class="pkg-name">Agent Runtime (LLM client)</span><span class="pkg-size">5.6 MB</span></label>
+      </div>
+
+      <!-- 操作按鈕 -->
+      <div class="button-bar">
+        <button class="btn btn-build" id="btn-build">🔨 編譯</button>
+        <button class="btn btn-vm" id="btn-vm">🚀 啟動 VM</button>
+        <button class="btn btn-download" id="btn-download">💾 下載</button>
+      </div>
+    </div>
+
+    <!-- 右側：終端機 -->
+    <div class="right-panel">
+      <!-- 編譯終端 -->
+      <div class="terminal-section">
+        <div class="section-header">
+          <span class="dot inactive" id="build-dot"></span>
+          BUILD TERMINAL
+          <span id="build-status" style="margin-left:auto; color: var(--text-dim);">待命中</span>
+        </div>
+        <div id="build-terminal"></div>
+      </div>
+
+      <!-- VM 終端 -->
+      <div class="vm-section">
+        <div class="section-header">
+          <span class="dot inactive" id="vm-dot"></span>
+          VM TERMINAL (v86)
+        </div>
+        <div id="vm-container">
+          <div class="vm-placeholder" id="vm-placeholder">
+            <div class="icon">🖥️</div>
+            <p>點擊「🚀 啟動 VM」在瀏覽器中執行 Linux</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
