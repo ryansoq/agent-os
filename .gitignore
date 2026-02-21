@@ -1,0 +1,4 @@
+node_modules/
+images/*.bin
+images/*.img
+*.log
