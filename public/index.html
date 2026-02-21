@@ -3,109 +3,429 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Agent OS Builder</title>
+  <title>🔧 Agent OS Builder</title>
   <link rel="stylesheet" href="style.css">
-  <!-- xterm.js CDN -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.min.css">
 </head>
 <body>
-  <!-- 頂部標題 -->
   <header>
-    <div>
-      <h1>⚡ AGENT OS BUILDER</h1>
-      <div class="subtitle">自訂 Linux 映像 — 為 AI Agent 而生</div>
-    </div>
-    <div class="header-right">
-      <div id="image-size">💾 預估大小: 0 MB</div>
-    </div>
+    <h1>🔧 Agent OS Builder</h1>
+    <span class="subtitle">Build your own Agent OS — Kernel → System → Agent</span>
   </header>
 
   <div class="main">
-    <!-- 左側：套件選擇 -->
-    <div class="left-panel">
-
-      <div class="category">
-        <div class="category-title">🔧 基本工具 <span class="select-all" data-cat="basic">全選</span></div>
-        <label class="pkg-item"><input type="checkbox" data-pkg="busybox" data-size="2.1" checked><span class="pkg-name">BusyBox</span><span class="pkg-size">2.1 MB</span></label>
-        <label class="pkg-item"><input type="checkbox" data-pkg="coreutils" data-size="8.5"><span class="pkg-name">coreutils</span><span class="pkg-size">8.5 MB</span></label>
-        <label class="pkg-item"><input type="checkbox" data-pkg="util-linux" data-size="5.2"><span class="pkg-name">util-linux</span><span class="pkg-size">5.2 MB</span></label>
+    <!-- 左側：三層套件選擇 -->
+    <div class="panel packages-panel">
+      
+      <!-- 快速選擇 -->
+      <div class="quick-select">
+        <h2>⚡ 快速選擇</h2>
+        <div class="profile-buttons">
+          <button class="profile-btn active" onclick="loadProfile('vm')">🤖 VM Agent</button>
+          <button class="profile-btn" onclick="loadProfile('pi')">🏠 Pi Agent</button>
+          <button class="profile-btn" onclick="loadProfile('full')">🖥️ 完整版</button>
+          <button class="profile-btn" onclick="loadProfile('minimal')">💀 極簡</button>
+        </div>
       </div>
 
-      <div class="category">
-        <div class="category-title">🌐 網路 <span class="select-all" data-cat="net">全選</span></div>
-        <label class="pkg-item"><input type="checkbox" data-pkg="curl" data-size="3.8"><span class="pkg-name">curl</span><span class="pkg-size">3.8 MB</span></label>
-        <label class="pkg-item"><input type="checkbox" data-pkg="wget" data-size="2.9"><span class="pkg-name">wget</span><span class="pkg-size">2.9 MB</span></label>
-        <label class="pkg-item"><input type="checkbox" data-pkg="openssl" data-size="12.1"><span class="pkg-name">OpenSSL</span><span class="pkg-size">12.1 MB</span></label>
-        <label class="pkg-item"><input type="checkbox" data-pkg="dhcpcd" data-size="0.8"><span class="pkg-name">dhcpcd</span><span class="pkg-size">0.8 MB</span></label>
-        <label class="pkg-item"><input type="checkbox" data-pkg="openssh" data-size="4.5"><span class="pkg-name">openssh</span><span class="pkg-size">4.5 MB</span></label>
-        <label class="pkg-item"><input type="checkbox" data-pkg="iptables" data-size="1.2"><span class="pkg-name">iptables</span><span class="pkg-size">1.2 MB</span></label>
+      <div class="layer-tabs">
+        <button class="tab active" onclick="switchLayer('kernel')">⚙️ Layer 1: Kernel</button>
+        <button class="tab" onclick="switchLayer('system')">📦 Layer 2: System</button>
+        <button class="tab" onclick="switchLayer('agent')">🤖 Layer 3: Agent</button>
       </div>
 
-      <div class="category">
-        <div class="category-title">💻 語言 <span class="select-all" data-cat="lang">全選</span></div>
-        <label class="pkg-item"><input type="checkbox" data-pkg="python3" data-size="45.2"><span class="pkg-name">Python 3</span><span class="pkg-size">45.2 MB</span></label>
-        <label class="pkg-item"><input type="checkbox" data-pkg="nodejs" data-size="32.8"><span class="pkg-name">Node.js</span><span class="pkg-size">32.8 MB</span></label>
-        <label class="pkg-item"><input type="checkbox" data-pkg="ruby" data-size="28.4"><span class="pkg-name">Ruby</span><span class="pkg-size">28.4 MB</span></label>
-        <label class="pkg-item"><input type="checkbox" data-pkg="lua" data-size="0.5"><span class="pkg-name">Lua</span><span class="pkg-size">0.5 MB</span></label>
+      <!-- ═══ Layer 1: Kernel 驅動 ═══ -->
+      <div id="layer-kernel" class="layer-content active">
+
+        <div class="category">
+          <h3>🌐 網路子系統</h3>
+          <label class="required"><input type="checkbox" data-layer="kernel" data-id="k:tcp" data-size="0" checked disabled> 
+            TCP/IP Stack <span class="badge required-badge">必要</span>
+            <br><span class="desc">網路通訊核心 — 沒有它什麼 API 都呼叫不了</span>
+          </label>
+          <label class="required"><input type="checkbox" data-layer="kernel" data-id="k:dns" data-size="0" checked disabled> 
+            DNS Resolver <span class="badge required-badge">必要</span>
+            <br><span class="desc">域名解析 — 把 api.anthropic.com 變成 IP</span>
+          </label>
+          <label><input type="checkbox" data-layer="kernel" data-id="k:ipv6" data-size="0.3"> 
+            IPv6 <span class="size">+0.3MB</span>
+            <br><span class="desc">下一代網路協定（部分雲端 API 需要）</span>
+          </label>
+          <label><input type="checkbox" data-layer="kernel" data-id="k:netfilter" data-size="0.8"> 
+            Netfilter/iptables <span class="size">+0.8MB</span>
+            <br><span class="desc">防火牆框架 — 過濾/轉發封包</span>
+          </label>
+          <label><input type="checkbox" data-layer="kernel" data-id="k:wifi" data-size="2.1"> 
+            WiFi (cfg80211) <span class="size">+2.1MB</span>
+            <br><span class="desc">無線網路 — VM 不需要，實體機才要</span>
+          </label>
+          <label><input type="checkbox" data-layer="kernel" data-id="k:bluetooth" data-size="1.8"> 
+            Bluetooth <span class="size">+1.8MB</span>
+            <br><span class="desc">藍牙通訊 — IoT 場景需要</span>
+          </label>
+        </div>
+
+        <div class="category">
+          <h3>💾 儲存 / 檔案系統</h3>
+          <label class="required"><input type="checkbox" data-layer="kernel" data-id="k:ext4" data-size="0" checked disabled> 
+            ext4 <span class="badge required-badge">必要</span>
+            <br><span class="desc">Linux 標準檔案系統</span>
+          </label>
+          <label class="required"><input type="checkbox" data-layer="kernel" data-id="k:tmpfs" data-size="0" checked disabled> 
+            tmpfs / procfs / sysfs <span class="badge required-badge">必要</span>
+            <br><span class="desc">虛擬檔案系統 — /proc, /sys, /tmp</span>
+          </label>
+          <label><input type="checkbox" data-layer="kernel" data-id="k:fat" data-size="0.2"> 
+            FAT/vFAT <span class="size">+0.2MB</span>
+            <br><span class="desc">USB 隨身碟常用格式</span>
+          </label>
+          <label><input type="checkbox" data-layer="kernel" data-id="k:ntfs" data-size="0.5"> 
+            NTFS <span class="size">+0.5MB</span>
+            <br><span class="desc">Windows 檔案系統</span>
+          </label>
+          <label><input type="checkbox" data-layer="kernel" data-id="k:nfs" data-size="0.8"> 
+            NFS Client <span class="size">+0.8MB</span>
+            <br><span class="desc">網路檔案系統 — 掛載遠端資料夾</span>
+          </label>
+          <label><input type="checkbox" data-layer="kernel" data-id="k:fuse" data-size="0.2"> 
+            FUSE <span class="size">+0.2MB</span>
+            <br><span class="desc">使用者空間檔案系統（sshfs 等需要）</span>
+          </label>
+        </div>
+
+        <div class="category">
+          <h3>🖥️ 顯示 / 圖形</h3>
+          <label><input type="checkbox" data-layer="kernel" data-id="k:vga" data-size="0.1"> 
+            VGA Console <span class="size">+0.1MB</span>
+            <br><span class="desc">基本文字輸出（v86 模擬器用）</span>
+          </label>
+          <label><input type="checkbox" data-layer="kernel" data-id="k:fb" data-size="0.5"> 
+            Framebuffer <span class="size">+0.5MB</span>
+            <br><span class="desc">基本圖形輸出（無 GPU 加速）</span>
+          </label>
+          <label><input type="checkbox" data-layer="kernel" data-id="k:drm" data-size="3.2"> 
+            DRM/GPU <span class="size">+3.2MB</span>
+            <br><span class="desc">GPU 驅動框架 — 需要圖形介面時開</span>
+          </label>
+        </div>
+
+        <div class="category">
+          <h3>🔌 裝置驅動</h3>
+          <label class="required"><input type="checkbox" data-layer="kernel" data-id="k:tty" data-size="0" checked disabled> 
+            TTY / Serial <span class="badge required-badge">必要</span>
+            <br><span class="desc">終端機介面 — 你打字就靠它</span>
+          </label>
+          <label><input type="checkbox" data-layer="kernel" data-id="k:virtio" data-size="0.5" checked> 
+            VirtIO <span class="size">+0.5MB</span> <span class="badge rec-badge">推薦</span>
+            <br><span class="desc">VM 虛擬裝置（QEMU/v86 用，效能好）</span>
+          </label>
+          <label><input type="checkbox" data-layer="kernel" data-id="k:usb" data-size="1.5"> 
+            USB <span class="size">+1.5MB</span>
+            <br><span class="desc">USB 裝置支援（鍵盤/滑鼠/隨身碟）</span>
+          </label>
+          <label><input type="checkbox" data-layer="kernel" data-id="k:input" data-size="0.3"> 
+            Input (鍵盤/滑鼠) <span class="size">+0.3MB</span>
+            <br><span class="desc">輸入裝置驅動</span>
+          </label>
+          <label><input type="checkbox" data-layer="kernel" data-id="k:sound" data-size="2.5"> 
+            ALSA 音效 <span class="size">+2.5MB</span>
+            <br><span class="desc">音效子系統 — TTS 語音需要</span>
+          </label>
+          <label><input type="checkbox" data-layer="kernel" data-id="k:camera" data-size="1.2"> 
+            V4L2 攝影機 <span class="size">+1.2MB</span>
+            <br><span class="desc">攝影機/視訊擷取</span>
+          </label>
+          <label><input type="checkbox" data-layer="kernel" data-id="k:gpio" data-size="0.2"> 
+            GPIO <span class="size">+0.2MB</span>
+            <br><span class="desc">通用 I/O 腳位（Raspberry Pi 用）</span>
+          </label>
+          <label><input type="checkbox" data-layer="kernel" data-id="k:i2c" data-size="0.2"> 
+            I2C / SPI <span class="size">+0.2MB</span>
+            <br><span class="desc">感測器/週邊通訊匯流排</span>
+          </label>
+        </div>
+
+        <div class="category">
+          <h3>🔒 安全</h3>
+          <label><input type="checkbox" data-layer="kernel" data-id="k:seccomp" data-size="0.1" checked> 
+            Seccomp <span class="size">+0.1MB</span> <span class="badge rec-badge">推薦</span>
+            <br><span class="desc">系統呼叫過濾 — 限制 Agent 能做的事</span>
+          </label>
+          <label><input type="checkbox" data-layer="kernel" data-id="k:namespaces" data-size="0.2" checked> 
+            Namespaces <span class="size">+0.2MB</span> <span class="badge rec-badge">推薦</span>
+            <br><span class="desc">容器隔離基礎（Docker 需要）</span>
+          </label>
+          <label><input type="checkbox" data-layer="kernel" data-id="k:cgroups" data-size="0.3"> 
+            Cgroups <span class="size">+0.3MB</span>
+            <br><span class="desc">資源限制（CPU/記憶體上限）</span>
+          </label>
+          <label><input type="checkbox" data-layer="kernel" data-id="k:selinux" data-size="1.5"> 
+            SELinux <span class="size">+1.5MB</span>
+            <br><span class="desc">強制存取控制 — 企業級安全（重）</span>
+          </label>
+          <label><input type="checkbox" data-layer="kernel" data-id="k:crypto" data-size="0.5" checked> 
+            Crypto API <span class="size">+0.5MB</span> <span class="badge rec-badge">推薦</span>
+            <br><span class="desc">核心加密框架 — TLS/HTTPS 需要</span>
+          </label>
+        </div>
+
+        <div class="category">
+          <h3>⚡ 效能</h3>
+          <label><input type="checkbox" data-layer="kernel" data-id="k:smp" data-size="0.2" checked> 
+            SMP 多核心 <span class="size">+0.2MB</span> <span class="badge rec-badge">推薦</span>
+            <br><span class="desc">多 CPU 核心支援</span>
+          </label>
+          <label><input type="checkbox" data-layer="kernel" data-id="k:hugepages" data-size="0.1"> 
+            Huge Pages <span class="size">+0.1MB</span>
+            <br><span class="desc">大頁面記憶體 — 大型應用效能優化</span>
+          </label>
+        </div>
       </div>
 
-      <div class="category">
-        <div class="category-title">📝 編輯器 <span class="select-all" data-cat="editor">全選</span></div>
-        <label class="pkg-item"><input type="checkbox" data-pkg="vim" data-size="11.3"><span class="pkg-name">Vim</span><span class="pkg-size">11.3 MB</span></label>
-        <label class="pkg-item"><input type="checkbox" data-pkg="nano" data-size="2.1"><span class="pkg-name">nano</span><span class="pkg-size">2.1 MB</span></label>
+      <!-- ═══ Layer 2: System 工具 ═══ -->
+      <div id="layer-system" class="layer-content">
+        
+        <div class="category">
+          <h3>🔧 基本工具</h3>
+          <label class="required"><input type="checkbox" data-layer="system" data-id="busybox" data-size="2.1" checked disabled> 
+            BusyBox <span class="badge required-badge">必要</span> <span class="size">2.1MB</span>
+            <br><span class="desc">sh, ls, cat, grep, mount... 瑞士刀工具集</span>
+          </label>
+          <label><input type="checkbox" data-layer="system" data-id="coreutils" data-size="8.5"> 
+            coreutils <span class="size">8.5MB</span>
+            <br><span class="desc">GNU 完整版工具（取代 BusyBox 精簡版）</span>
+          </label>
+          <label><input type="checkbox" data-layer="system" data-id="util-linux" data-size="5.2"> 
+            util-linux <span class="size">5.2MB</span>
+            <br><span class="desc">mount, fdisk, lsblk, dmesg 等系統管理</span>
+          </label>
+          <label><input type="checkbox" data-layer="system" data-id="bash" data-size="1.2"> 
+            Bash <span class="size">1.2MB</span>
+            <br><span class="desc">進階 shell（BusyBox 的 sh 夠用就不需要）</span>
+          </label>
+        </div>
+
+        <div class="category">
+          <h3>🌐 網路工具</h3>
+          <label><input type="checkbox" data-layer="system" data-id="curl" data-size="3.8" checked> 
+            curl <span class="size">3.8MB</span> <span class="badge rec-badge">推薦</span>
+            <br><span class="desc">HTTP 用戶端 — 呼叫 LLM API 必備</span>
+          </label>
+          <label><input type="checkbox" data-layer="system" data-id="wget" data-size="2.9"> 
+            wget <span class="size">2.9MB</span>
+            <br><span class="desc">下載檔案工具</span>
+          </label>
+          <label class="required"><input type="checkbox" data-layer="system" data-id="openssl" data-size="12.1" checked disabled> 
+            OpenSSL <span class="badge required-badge">必要</span> <span class="size">12.1MB</span>
+            <br><span class="desc">TLS/SSL 加密庫 — HTTPS 必備</span>
+          </label>
+          <label><input type="checkbox" data-layer="system" data-id="ca-certs" data-size="0.2" checked> 
+            CA Certificates <span class="size">0.2MB</span> <span class="badge rec-badge">推薦</span>
+            <br><span class="desc">根憑證 — 驗證 HTTPS 網站身份</span>
+          </label>
+          <label><input type="checkbox" data-layer="system" data-id="dhcpcd" data-size="0.8" checked> 
+            dhcpcd <span class="size">0.8MB</span> <span class="badge rec-badge">推薦</span>
+            <br><span class="desc">自動取得 IP 位址</span>
+          </label>
+          <label><input type="checkbox" data-layer="system" data-id="openssh" data-size="4.5"> 
+            OpenSSH <span class="size">4.5MB</span>
+            <br><span class="desc">SSH 遠端連線（遠端管理 Agent 用）</span>
+          </label>
+          <label><input type="checkbox" data-layer="system" data-id="iptables" data-size="1.2"> 
+            iptables <span class="size">1.2MB</span>
+            <br><span class="desc">防火牆規則管理工具</span>
+          </label>
+          <label><input type="checkbox" data-layer="system" data-id="wireguard" data-size="0.5"> 
+            WireGuard tools <span class="size">0.5MB</span>
+            <br><span class="desc">VPN 工具 — Agent 安全連線</span>
+          </label>
+        </div>
+
+        <div class="category">
+          <h3>🐍 程式語言</h3>
+          <label><input type="checkbox" data-layer="system" data-id="python3" data-size="45.2" checked> 
+            Python 3 <span class="size">45.2MB</span> <span class="badge rec-badge">推薦</span>
+            <br><span class="desc">Agent 主要執行環境（Claude/GPT SDK）</span>
+          </label>
+          <label><input type="checkbox" data-layer="system" data-id="nodejs" data-size="32.8"> 
+            Node.js <span class="size">32.8MB</span>
+            <br><span class="desc">JavaScript 執行環境（pi-mono 用這個）</span>
+          </label>
+          <label><input type="checkbox" data-layer="system" data-id="ruby" data-size="28.4"> 
+            Ruby <span class="size">28.4MB</span>
+            <br><span class="desc">Ruby 程式語言</span>
+          </label>
+          <label><input type="checkbox" data-layer="system" data-id="lua" data-size="0.5"> 
+            Lua <span class="size">0.5MB</span>
+            <br><span class="desc">超輕量腳本語言（嵌入式常用）</span>
+          </label>
+          <label><input type="checkbox" data-layer="system" data-id="go" data-size="55.0"> 
+            Go <span class="size">55.0MB</span>
+            <br><span class="desc">Go 語言（高效能 Agent/Server）</span>
+          </label>
+        </div>
+
+        <div class="category">
+          <h3>📝 編輯器</h3>
+          <label><input type="checkbox" data-layer="system" data-id="vim" data-size="11.3"> 
+            Vim <span class="size">11.3MB</span>
+            <br><span class="desc">強大的終端文字編輯器</span>
+          </label>
+          <label><input type="checkbox" data-layer="system" data-id="nano" data-size="2.1"> 
+            nano <span class="size">2.1MB</span>
+            <br><span class="desc">簡單文字編輯器（新手友善）</span>
+          </label>
+        </div>
+
+        <div class="category">
+          <h3>📊 監控 / Debug</h3>
+          <label><input type="checkbox" data-layer="system" data-id="htop" data-size="0.4"> 
+            htop <span class="size">0.4MB</span>
+            <br><span class="desc">互動式進程管理器</span>
+          </label>
+          <label><input type="checkbox" data-layer="system" data-id="strace" data-size="1.8"> 
+            strace <span class="size">1.8MB</span>
+            <br><span class="desc">追蹤系統呼叫（debug 神器）</span>
+          </label>
+          <label><input type="checkbox" data-layer="system" data-id="lsof" data-size="0.3"> 
+            lsof <span class="size">0.3MB</span>
+            <br><span class="desc">列出開啟的檔案/網路連線</span>
+          </label>
+          <label><input type="checkbox" data-layer="system" data-id="tmux" data-size="0.8"> 
+            tmux <span class="size">0.8MB</span>
+            <br><span class="desc">終端多工器 — 一個 SSH 開多個畫面</span>
+          </label>
+        </div>
+
+        <div class="category">
+          <h3>📦 套件管理</h3>
+          <label><input type="checkbox" data-layer="system" data-id="git" data-size="15.2"> 
+            Git <span class="size">15.2MB</span>
+            <br><span class="desc">版本控制 — Agent 管理自己的 code</span>
+          </label>
+          <label><input type="checkbox" data-layer="system" data-id="pip" data-size="3.5"> 
+            pip <span class="size">3.5MB</span>
+            <br><span class="desc">Python 套件管理器（需要先選 Python）</span>
+          </label>
+        </div>
       </div>
 
-      <div class="category">
-        <div class="category-title">📊 監控 <span class="select-all" data-cat="mon">全選</span></div>
-        <label class="pkg-item"><input type="checkbox" data-pkg="htop" data-size="0.4"><span class="pkg-name">htop</span><span class="pkg-size">0.4 MB</span></label>
-        <label class="pkg-item"><input type="checkbox" data-pkg="strace" data-size="1.8"><span class="pkg-name">strace</span><span class="pkg-size">1.8 MB</span></label>
-        <label class="pkg-item"><input type="checkbox" data-pkg="lsof" data-size="0.3"><span class="pkg-name">lsof</span><span class="pkg-size">0.3 MB</span></label>
+      <!-- ═══ Layer 3: Agent ═══ -->
+      <div id="layer-agent" class="layer-content">
+        
+        <div class="category">
+          <h3>🤖 Agent Runtime</h3>
+          <label><input type="checkbox" data-layer="agent" data-id="agent-core" data-size="0.1" checked> 
+            Agent Core <span class="size">0.1MB</span> <span class="badge rec-badge">推薦</span>
+            <br><span class="desc">50 行 LLM client — 開機直接跟 AI 對話</span>
+          </label>
+          <label><input type="checkbox" data-layer="agent" data-id="agent-tools" data-size="0.2" checked> 
+            Tool Calling <span class="size">0.2MB</span> <span class="badge rec-badge">推薦</span>
+            <br><span class="desc">讓 AI 執行 shell 指令、讀寫檔案</span>
+          </label>
+          <label><input type="checkbox" data-layer="agent" data-id="agent-session" data-size="0.1"> 
+            Session 持久化 <span class="size">0.1MB</span>
+            <br><span class="desc">對話存檔，重開機不失憶</span>
+          </label>
+          <label><input type="checkbox" data-layer="agent" data-id="agent-compact" data-size="0.1"> 
+            Context Compact <span class="size">0.1MB</span>
+            <br><span class="desc">對話太長自動壓縮（省 token）</span>
+          </label>
+        </div>
+
+        <div class="category">
+          <h3>🧠 LLM Provider</h3>
+          <label><input type="checkbox" data-layer="agent" data-id="llm-claude" data-size="0" checked> 
+            Claude (Anthropic) <span class="badge rec-badge">推薦</span>
+            <br><span class="desc">claude-sonnet / opus — 需要 API key</span>
+          </label>
+          <label><input type="checkbox" data-layer="agent" data-id="llm-openai" data-size="0"> 
+            GPT (OpenAI)
+            <br><span class="desc">gpt-4o / o1 — 需要 API key</span>
+          </label>
+          <label><input type="checkbox" data-layer="agent" data-id="llm-gemini" data-size="0"> 
+            Gemini (Google)
+            <br><span class="desc">gemini-2.0-flash — 免費額度</span>
+          </label>
+          <label><input type="checkbox" data-layer="agent" data-id="llm-local" data-size="0"> 
+            Local LLM (Ollama)
+            <br><span class="desc">本地模型 — 不需要網路，但需要 GPU/RAM</span>
+          </label>
+        </div>
+
+        <div class="category">
+          <h3>🔌 Agent 擴充</h3>
+          <label><input type="checkbox" data-layer="agent" data-id="agent-http" data-size="0.1"> 
+            HTTP Server <span class="size">0.1MB</span>
+            <br><span class="desc">讓外部透過 API 呼叫 Agent</span>
+          </label>
+          <label><input type="checkbox" data-layer="agent" data-id="agent-cron" data-size="0.1"> 
+            Cron 排程 <span class="size">0.1MB</span>
+            <br><span class="desc">定時執行任務（巡邏、檢查、報告）</span>
+          </label>
+          <label><input type="checkbox" data-layer="agent" data-id="agent-ipc" data-size="0.1"> 
+            Agent IPC <span class="size">0.1MB</span>
+            <br><span class="desc">Agent 間通訊（多 Agent 協作）</span>
+          </label>
+          <label><input type="checkbox" data-layer="agent" data-id="agent-kaspa" data-size="0.5"> 
+            Kaspa 錢包 <span class="size">0.5MB</span>
+            <br><span class="desc">區塊鏈身份 + 鏈上交易能力</span>
+          </label>
+        </div>
+
+        <div class="category">
+          <h3>🛡️ 安全設定</h3>
+          <label><input type="checkbox" data-layer="agent" data-id="agent-sandbox" data-size="0.1" checked> 
+            Sandbox Mode <span class="size">0.1MB</span> <span class="badge rec-badge">推薦</span>
+            <br><span class="desc">限制 Agent 能存取的目錄和指令</span>
+          </label>
+          <label><input type="checkbox" data-layer="agent" data-id="agent-audit" data-size="0.1"> 
+            Audit Log <span class="size">0.1MB</span>
+            <br><span class="desc">記錄 Agent 所有操作（可追溯）</span>
+          </label>
+        </div>
       </div>
 
-      <div class="category">
-        <div class="category-title">🤖 Agent <span class="select-all" data-cat="agent">全選</span></div>
-        <label class="pkg-item"><input type="checkbox" data-pkg="agent-runtime" data-size="5.6"><span class="pkg-name">Agent Runtime (LLM client)</span><span class="pkg-size">5.6 MB</span></label>
+      <!-- 大小顯示 -->
+      <div class="size-bar">
+        <div class="size-info">
+          <span class="size-label">預估映像大小：<span id="totalSize">68.6</span> MB</span>
+          <span class="size-detail" id="sizeDetail">Kernel: 4.2MB | System: 58.8MB | Agent: 0.6MB</span>
+        </div>
+        <div class="size-track"><div class="size-fill" id="sizeFill"></div></div>
       </div>
 
-      <!-- 操作按鈕 -->
-      <div class="button-bar">
-        <button class="btn btn-build" id="btn-build">🔨 編譯</button>
-        <button class="btn btn-vm" id="btn-vm">🚀 啟動 VM</button>
-        <button class="btn btn-download" id="btn-download">💾 下載</button>
+      <div class="actions">
+        <button id="btnBuild" onclick="startBuild()">🔨 編譯</button>
+        <button id="btnBoot" onclick="bootVM()" disabled>🚀 啟動 VM</button>
+        <button id="btnExport" onclick="exportConfig()">📋 匯出設定</button>
       </div>
     </div>
 
-    <!-- 右側：終端機 -->
-    <div class="right-panel">
-      <!-- 編譯終端 -->
+    <!-- 右側：終端 -->
+    <div class="panel terminal-panel">
       <div class="terminal-section">
-        <div class="section-header">
-          <span class="dot inactive" id="build-dot"></span>
-          BUILD TERMINAL
-          <span id="build-status" style="margin-left:auto; color: var(--text-dim);">待命中</span>
-        </div>
-        <div id="build-terminal"></div>
+        <h2>🛠️ 編譯 Log</h2>
+        <div id="buildTerminal" class="terminal-container"></div>
       </div>
-
-      <!-- VM 終端 -->
-      <div class="vm-section">
-        <div class="section-header">
-          <span class="dot inactive" id="vm-dot"></span>
-          VM TERMINAL (v86)
-        </div>
-        <div id="vm-container">
-          <div class="vm-placeholder" id="vm-placeholder">
-            <div class="icon">🖥️</div>
-            <p>點擊「🚀 啟動 VM」在瀏覽器中執行 Linux</p>
+      <div class="terminal-section">
+        <h2>💻 VM Terminal</h2>
+        <div id="vmArea" class="terminal-container vm-container">
+          <div id="vmPlaceholder" class="placeholder">
+            <p>⚙️ Kernel → 📦 System → 🤖 Agent</p>
+            <p class="sub">選好三層套件 → 編譯 → 啟動你的 Agent OS</p>
           </div>
+          <div id="vmScreen" style="display:none;"></div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Scripts -->
+  <footer>
+    Agent OS Builder v0.2 — Kernel + System + Agent | 🌊 Nami & Ryan
+  </footer>
+
   <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
