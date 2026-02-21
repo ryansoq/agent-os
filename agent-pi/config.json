@@ -1,0 +1,19 @@
+{
+  "version": "0.1",
+  "agent": {
+    "name": "agent-01",
+    "model": "claude-sonnet-4-20250514",
+    "provider": "claude"
+  },
+  "tools": ["shell", "file"],
+  "session": {
+    "persist": true,
+    "path": "/agent/sessions/",
+    "compact_threshold": 50000
+  },
+  "security": {
+    "sandbox": true,
+    "allowed_dirs": ["/agent", "/tmp"],
+    "blocked_cmds": ["rm -rf /", "shutdown"]
+  }
+}
