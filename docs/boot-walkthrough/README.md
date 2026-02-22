@@ -65,6 +65,7 @@ sudo apt install nasm gcc qemu-system-x86
 | 檔案 | 你會搞懂的問題 |
 |------|---------------|
 | [05_RINGS_AND_SYSCALL.md](05_RINGS_AND_SYSCALL.md) | 為什麼 Chrome 不能直接讀你的硬碟？為什麼 Ring 3 進不了 Ring 0？Syscall 到底怎麼運作？ |
+| [ANSWERS.md](ANSWERS.md) | 📝 所有思考題的解答（建議先自己想過再看！） |
 
 ---
 
