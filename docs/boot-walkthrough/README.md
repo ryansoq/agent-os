@@ -70,6 +70,12 @@ BIOS/UEFI
 - **Identity Mapping** → 04_head_64.S
 - **`__KERNEL32_CS` vs `__KERNEL_CS`** → 04_head_64.S (D-bit vs L-bit)
 
+## 🧩 概念補充
+
+| 編號 | 檔案 | 說明 |
+|------|------|------|
+| 05★ | [05_RINGS_AND_SYSCALL.md](05_RINGS_AND_SYSCALL.md) | Ring 特權級與 Syscall — 為什麼 User 拿不到 Ring 0 |
+
 ## 💡 閱讀建議
 
 1. 按編號順序讀，每個檔案開頭的「教學筆記」會說明前後文
