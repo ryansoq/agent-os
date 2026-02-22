@@ -128,13 +128,49 @@ if (CPL > DPL) {
 
 ```nasm
 mov ax, 0x08      ; Ring 0 的 kernel code segment selector
-mov cs, ax        ; ❌ #GP (General Protection Fault)
+mov cs, ax        ; ❌ 這條指令根本不存在！
 ```
 
-**結果**：CPU 立刻觸發 #GP 異常。因為你 CPL = 3，你試圖載入一個 DPL = 0 的段。
+**結果**：Intel 的指令集裡**沒有 `mov cs, ...` 這條指令**。這不是「執行了被拒絕」，是**矽晶片上就沒有這條電路**。
 
-**比喻**：偷改識別證 → 識別證是金屬刻的（硬體），你沒工具改。  
-CS 暫存器不能被一般 `mov` 指令任意修改 — CPU 會在載入時檢查權限。
+CS 是唯一不能用 `mov` 寫入的 segment register：
+
+```nasm
+mov ds, ax      ; ✅ Data Segment — 可以
+mov es, ax      ; ✅ Extra Segment — 可以
+mov ss, ax      ; ✅ Stack Segment — 可以
+mov cs, ax      ; ❌ 不存在！CPU 不認這條指令
+```
+
+那 CS 怎麼改？只有三條路：
+
+```nasm
+; 方法 1: Far Jump
+jmp 0x08:地址     ; CPU 會載入新的 CS，但會檢查 CPL vs DPL
+                  ; CPL=3 跳 DPL=0 → ❌ #GP
+
+; 方法 2: Far Call / Far Return
+retf / call far   ; 同樣會改 CS，一樣要權限檢查
+
+; 方法 3: SYSCALL / INT
+syscall            ; CPU 硬體自動改 CS，但入口地址你控制不了
+```
+
+**比喻**：
+- 其他 register（DS, ES, SS）= 你手上的工具，可以自己換
+- CS = 你的**身份證**，焊死在身上
+- 想換身份證？只能去「官方櫃檯」(syscall/interrupt)，不能自己用印表機印 🚫
+
+> 💡 **小知識**：在 Real Mode 下，`jmp seg:offset` 可以任意改 CS，完全不檢查權限。
+> 這就是為什麼 DOS 時代病毒那麼猖獗 — 沒有門禁，誰都能去任何地方。
+> Protected Mode 就是為了解決這個問題而發明的。
+>
+> ```
+> Real Mode:      jmp 0x1234:0x0000  → CS=0x1234，沒人管 🤷
+> Protected Mode: jmp 0x08:地址      → CPU 查 GDT，檢查 CPL vs DPL 🔍
+> ```
+>
+> 同一條指令，Real Mode 是「隨便跳」，Protected Mode 是「驗完身份才能跳」。
 
 ### 嘗試 2: Far jump 到 Ring 0 的程式碼
 
