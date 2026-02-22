@@ -28,6 +28,10 @@ start:
     lgdt [gdt_descriptor] ; 🔑 載入 GDT 描述符到 GDTR 暫存器
 
     ; === 設定 CR0.PE = 1，進入 Protected Mode ===
+    ; 🔑 設 CR0.PE=1 就像按下「升級開關」
+    ;     Real Mode → Protected Mode
+    ;     從「沒有門禁的老舊公寓」→「有門禁的現代大樓」
+    ;     按下去之後，所有記憶體存取都要經過 GDT 的權限檢查
     mov eax, cr0        ; 🔑 讀取 Control Register 0
     or eax, 1           ; 🔑 設定 bit 0 = PE (Protection Enable)
     mov cr0, eax        ; 🔑 寫回！CPU 現在進入 Protected Mode
@@ -40,6 +44,17 @@ start:
 
 ; ============================================================
 ; GDT (Global Descriptor Table)
+;
+; 🏰 比喻：GDT 就像辦公大樓的門禁卡設定表
+;     卡片 0: 空卡（CPU 規定第一張一定要是空的）
+;     卡片 1: 員工卡（Code Segment）→ 能進辦公區執行程式
+;     卡片 2: 倉庫卡（Data Segment）→ 能進倉庫讀寫資料
+;
+; 🎖️ DPL（特權等級）就像門禁卡的等級：
+;     Ring 0 = 大樓管理員 👑 → 能開所有門、改門禁、關電源
+;     Ring 3 = 一般訪客 🧑 → 只能進大廳和會議室
+;     想從 Ring 3 進 Ring 0？→ 按「服務鈴」(syscall)，管理員決定幫不幫你
+;
 ; 🔑 GDT 定義記憶體分段的存取權限和範圍
 ; 🔑 每個 entry 8 bytes，描述一個 segment
 ; ============================================================
@@ -110,22 +125,53 @@ pm_entry:
     mov ss, ax          ; 🔑 Stack Segment
     mov esp, 0x90000    ; 🔑 Stack pointer 設在高位址（有足夠空間向下生長）
 
-    ; === 直接寫 VGA 記憶體印彩色字 ===
-    ; 🔑 在 Protected Mode 不能用 BIOS 中斷了！
-    ; 🔑 VGA text mode buffer 在 0xB8000
-    ; 🔑 每個字元佔 2 bytes：[字元][屬性]
-    ; 🔑 屬性格式：[背景色 4bit][前景色 4bit]
-    ;     0x0F = 黑底白字, 0x0A = 黑底綠字, 0x0C = 黑底紅字
-    mov edi, 0xB8000    ; 🔑 EDI 指向 VGA buffer 起始位址
-    mov esi, pm_msg     ; 🔑 ESI 指向要印的字串
-    mov ah, 0x0A        ; 🔑 屬性 = 綠色字
+    ; --- 在 Protected Mode 下用 Serial Port 印字 ---
+    ; 🔑 在 Protected Mode 下不能用 BIOS 中斷！
+    ; 🔑 但我們可以直接用 I/O port 操作硬體（這就是 kernel 做的事！）
+    ; 🔑 COM1 serial port 的 I/O port 基底位址是 0x3F8
+    ;
+    ; 🔑 比喻：BIOS 中斷就像「叫服務生送餐」
+    ;     Serial port 就像「自己走到廚房拿」
+    ;     Protected Mode 沒有服務生了，你就是老闆，直接操作一切！
 
+    COM1 equ 0x3F8
+
+    ; 初始化 serial port
+    mov dx, COM1 + 1    ; Interrupt Enable Register
+    mov al, 0x00        ; 關閉所有中斷
+    out dx, al
+    mov dx, COM1 + 3    ; Line Control Register
+    mov al, 0x80        ; 啟用 DLAB (設定 baud rate)
+    out dx, al
+    mov dx, COM1 + 0    ; Divisor (低 byte)
+    mov al, 0x03        ; 38400 baud
+    out dx, al
+    mov dx, COM1 + 1    ; Divisor (高 byte)
+    mov al, 0x00
+    out dx, al
+    mov dx, COM1 + 3    ; Line Control Register
+    mov al, 0x03        ; 8 bits, no parity, 1 stop bit
+    out dx, al
+
+    ; 印字串到 serial port
+    mov esi, pm_msg
 .pm_loop:
     lodsb               ; 🔑 AL = [ESI], ESI++
     test al, al         ; 🔑 檢查 null terminator
     jz .pm_done         ; 🔑 結束
-    mov [edi], ax       ; 🔑 寫入 [字元(AL)][屬性(AH)] 到 VGA buffer
-    add edi, 2          ; 🔑 移到下一個字元位置（每個佔 2 bytes）
+
+    ; 等待 transmit ready
+    push eax            ; 🔑 保存字元
+    mov dx, COM1 + 5    ; Line Status Register
+.wait_tx:
+    in al, dx
+    test al, 0x20       ; 🔑 bit 5 = Transmit Holding Register Empty
+    jz .wait_tx
+
+    ; 送出字元
+    pop eax             ; 🔑 取回字元
+    mov dx, COM1
+    out dx, al          ; 🔑 送出到 serial port
     jmp .pm_loop        ; 🔑 繼續印下一個字元
 
 .pm_done:
@@ -134,7 +180,9 @@ pm_entry:
     hlt                 ; 🔑 停止 CPU
     jmp .pm_halt        ; 🔑 無限迴圈
 
-pm_msg: db "Hello from 32-bit Protected Mode! GDT works!", 0
+pm_msg: db 13, 10, "=== Agent OS Example 02: Protected Mode ===", 13, 10
+        db "Hello from 32-bit Protected Mode! GDT works!", 13, 10
+        db "We are using serial port (COM1) for output -- no VGA needed!", 13, 10, 0
 
 ; === 填充與 Boot Signature ===
 times 510-($-$$) db 0   ; 🔑 填滿到 510 bytes

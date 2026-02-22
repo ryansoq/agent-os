@@ -15,5 +15,5 @@ if [[ "$1" == "--build-only" ]]; then
 fi
 
 echo "🚀 啟動 QEMU...（按 Ctrl+A 然後 X 離開）"
-echo "💡 注意：Protected Mode 用 VGA 直寫，輸出在 QEMU 視窗中"
+echo "💡 Protected Mode 用 serial port 輸出，直接在 terminal 看結果"
 qemu-system-x86_64 -drive format=raw,file=boot.bin -nographic -serial mon:stdio

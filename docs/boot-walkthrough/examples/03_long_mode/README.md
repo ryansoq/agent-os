@@ -21,9 +21,11 @@ chmod +x build.sh
 
 ## 🔍 你會看到什麼
 
-QEMU VGA 畫面上顯示黃色的：
+Terminal 上會顯示（透過 serial port 輸出）：
 ```
+=== Agent OS Example 03: Long Mode (64-bit) ===
 Hello from 64-bit Long Mode! Welcome to the future!
+We set up 4-level page tables and entered 64-bit mode!
 ```
 
 ## 📖 頁表結構圖

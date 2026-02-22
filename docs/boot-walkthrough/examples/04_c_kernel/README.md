@@ -26,20 +26,17 @@ sudo apt-get install -y gcc gcc-multilib
 
 ## 🔍 你會看到什麼
 
-QEMU VGA 畫面上顯示：
+Terminal 上會顯示（透過 serial port 輸出）：
 ```
-=== Agent OS Boot Example 04: C Kernel ===
-
-Hello from C kernel! This is kernel_main() speaking.
+=== Agent OS Example 04: C Kernel ===
+Hello from C kernel! kernel_main() is running.
 We jumped from assembly to C successfully!
-
 VGA text mode: 80x25, direct memory at 0xB8000
 No printf, no stdlib -- just raw hardware access.
-
-======== (彩色分隔線) ========
-
 System halted. Your kernel is alive!
 ```
+
+如果用 QEMU 圖形模式，VGA 畫面也會同時顯示彩色版本。
 
 ## 📖 編譯流程
 

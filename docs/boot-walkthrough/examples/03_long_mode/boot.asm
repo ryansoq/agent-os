@@ -32,6 +32,14 @@ start:
     jz no_long_mode     ; 🔑 不支援就跳到錯誤處理
 
     ; === 建立 4 級頁表 (Identity Map 前 2MB) ===
+    ;
+    ; 🗺️ 比喻：頁表就像每個房客拿到的「客製化地圖」
+    ;     Chrome 的地圖：「地址 0x1000 → 實際在 RAM 的 0x50000」
+    ;     Firefox 的地圖：「地址 0x1000 → 實際在 RAM 的 0x80000」
+    ;     兩個人用同一個地址，但去到不同地方！互相看不到！
+    ;
+    ;     Identity Map = 「地圖上的地址 = 實際地址」（開機時最簡單的做法）
+    ;
     ; 🔑 Long Mode 強制使用分頁，需要 4 級頁表結構：
     ;     PML4 → PDPT → PD → PT（或用 2MB 大頁省略 PT）
     ;
@@ -90,6 +98,11 @@ start:
     ; 🔑 PAE 是 Long Mode 的前提，允許使用 4 級頁表
 
     ; === 設定 EFER.LME = 1 (啟用 Long Mode) ===
+    ; 🚀 比喻：從 32-bit 到 64-bit 就像從「縣道」到「高速公路」
+    ;     32-bit: 最多 4GB RAM（像只有 4 個車道的縣道）
+    ;     64-bit: 理論 16 EB RAM（像 1800 萬條車道的高速公路）
+    ;     但上高速公路之前，你得先拿到「ETC 通行證」(EFER.LME=1)
+    ;     然後開過「收費站」(CR0.PG=1)
     mov ecx, 0xC0000080 ; 🔑 EFER (Extended Feature Enable Register) 的 MSR 編號
     rdmsr               ; 🔑 讀取 MSR 到 EDX:EAX
     or eax, (1 << 8)    ; 🔑 設定 bit 8 = LME (Long Mode Enable)
@@ -181,18 +194,46 @@ lm_entry:
     mov gs, ax          ; 🔑 GS
     mov ss, ax          ; 🔑 Stack Segment
 
-    ; === 直接寫 VGA 記憶體 ===
-    ; 🔑 VGA text buffer 在 0xB8000（和 Protected Mode 一樣）
-    mov rdi, 0xB8000    ; 🔑 RDI = VGA buffer（注意：現在是 64-bit 暫存器！）
-    mov rsi, lm_msg     ; 🔑 RSI = 字串位址
-    mov ah, 0x0E        ; 🔑 屬性 = 黃色字
+    ; --- 在 Long Mode 下用 Serial Port 印字 ---
+    ; 🔑 在 Long Mode 下一樣可以用 out 指令操作 I/O port
+    ; 🔑 COM1 serial port 的 I/O port 基底位址是 0x3F8
 
+    ; 初始化 serial port
+    mov dx, 0x3F9       ; COM1 + 1: Interrupt Enable Register
+    mov al, 0x00
+    out dx, al
+    mov dx, 0x3FB       ; COM1 + 3: Line Control Register
+    mov al, 0x80        ; DLAB
+    out dx, al
+    mov dx, 0x3F8       ; COM1 + 0: Divisor low
+    mov al, 0x03        ; 38400 baud
+    out dx, al
+    mov dx, 0x3F9       ; COM1 + 1: Divisor high
+    mov al, 0x00
+    out dx, al
+    mov dx, 0x3FB       ; COM1 + 3: Line Control Register
+    mov al, 0x03        ; 8N1
+    out dx, al
+
+    ; 印字串到 serial port
+    mov rsi, lm_msg     ; 🔑 RSI = 字串位址（64-bit 暫存器！）
 .lm_loop:
     lodsb               ; 🔑 AL = [RSI], RSI++
     test al, al         ; 🔑 檢查 null terminator
     jz .lm_done         ; 🔑 結束
-    mov [rdi], ax       ; 🔑 寫 [字元][屬性] 到 VGA
-    add rdi, 2          ; 🔑 下一個字元位置
+
+    ; 等待 transmit ready
+    push rax            ; 🔑 保存字元
+    mov dx, 0x3FD       ; COM1 + 5: Line Status Register
+.wait_tx:
+    in al, dx
+    test al, 0x20       ; 🔑 bit 5 = Transmit Holding Register Empty
+    jz .wait_tx
+
+    ; 送出字元
+    pop rax             ; 🔑 取回字元
+    mov dx, 0x3F8       ; COM1
+    out dx, al          ; 🔑 送出到 serial port
     jmp .lm_loop        ; 🔑 繼續
 
 .lm_done:
@@ -201,7 +242,9 @@ lm_entry:
     hlt                 ; 🔑 停止 CPU
     jmp .lm_halt        ; 🔑 無限迴圈
 
-lm_msg: db "Hello from 64-bit Long Mode! Welcome to the future!", 0
+lm_msg: db 13, 10, "=== Agent OS Example 03: Long Mode (64-bit) ===", 13, 10
+        db "Hello from 64-bit Long Mode! Welcome to the future!", 13, 10
+        db "We set up 4-level page tables and entered 64-bit mode!", 13, 10, 0
 
 ; === 填充與 Boot Signature ===
 times 510-($-$$) db 0   ; 🔑 填滿到 510 bytes

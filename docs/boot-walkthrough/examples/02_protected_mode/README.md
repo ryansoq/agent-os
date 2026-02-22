@@ -20,9 +20,11 @@ chmod +x build.sh
 
 ## 🔍 你會看到什麼
 
-QEMU VGA 畫面上顯示綠色的：
+Terminal 上會顯示（透過 serial port 輸出）：
 ```
+=== Agent OS Example 02: Protected Mode ===
 Hello from 32-bit Protected Mode! GDT works!
+We are using serial port (COM1) for output -- no VGA needed!
 ```
 
 ## 📖 關鍵概念
