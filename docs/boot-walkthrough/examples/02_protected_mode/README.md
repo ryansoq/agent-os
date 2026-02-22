@@ -13,6 +13,8 @@
 
 ## 🔧 編譯 & 執行
 
+使用 GNU 工具鏈（跟 Linux kernel / xv6 一致）：
+
 ```bash
 chmod +x build.sh
 ./build.sh
@@ -44,10 +46,20 @@ GDT 是一張表，每個 entry 8 bytes，定義一個記憶體段的：
 - Control Register 0 的 bit 0 = Protection Enable
 - 設為 1 就進入 Protected Mode
 
+### AT&T 語法速查
+
+| AT&T | Intel | 說明 |
+|------|-------|------|
+| `movl $1, %eax` | `mov eax, 1` | 來源在左，目的在右 |
+| `movl %eax, %cr0` | `mov cr0, eax` | 暫存器前面加 % |
+| `$0x08` | `0x08` | 立即值前面加 $ |
+| `(%edi)` | `[edi]` | 記憶體用小括號 |
+| `ljmp $0x08, $label` | `jmp 0x08:label` | 遠跳轉語法 |
+
 ## 🤔 思考題
 
 1. 為什麼 GDT 第一個 entry 必須是 null？
-2. far jump `jmp 0x08:pm_entry` 的 0x08 是怎麼算出來的？
+2. far jump `ljmp $0x08, $pm_entry` 的 0x08 是怎麼算出來的？
 3. 為什麼 Protected Mode 不能用 BIOS 中斷？
 4. 如果不開 A20 Gate 會怎樣？
 5. Code Segment 和 Data Segment 的 Type 有什麼差別？

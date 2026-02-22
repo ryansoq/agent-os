@@ -14,6 +14,8 @@
 
 ## 🔧 編譯 & 執行
 
+使用 GNU 工具鏈（跟 Linux kernel / xv6 一致）：
+
 ```bash
 chmod +x build.sh
 ./build.sh
@@ -58,6 +60,16 @@ CR3 = 0x1000 (PML4)
 5. 設定 EFER.LME = 1（啟用 Long Mode）
 6. 開啟 Paging（CR0.PG = 1）+ PE
 7. Far jump 到 64-bit code segment
+
+### AT&T 語法速查
+
+| AT&T | Intel | 說明 |
+|------|-------|------|
+| `movl $1, %eax` | `mov eax, 1` | 來源在左，目的在右 |
+| `movl %eax, %cr0` | `mov cr0, eax` | 暫存器前面加 % |
+| `$0x08` | `0x08` | 立即值前面加 $ |
+| `(%edi)` | `[edi]` | 記憶體用小括號 |
+| `ljmp $0x08, $label` | `jmp 0x08:label` | 遠跳轉語法 |
 
 ## 🤔 思考題
 

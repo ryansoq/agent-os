@@ -14,6 +14,8 @@
 
 ## 🔧 編譯 & 執行
 
+使用 GNU 工具鏈（跟 Linux kernel / xv6 一致）：
+
 ```bash
 chmod +x build.sh
 ./build.sh
@@ -41,12 +43,22 @@ System halted. Your kernel is alive!
 ## 📖 編譯流程
 
 ```
-boot.asm ──[nasm]──→ boot.o ──┐
-                               ├──[ld]──→ kernel.bin ──[qemu]──→ 🖥️
-kernel.c ──[gcc]───→ kernel.o ─┘
+boot.S  ──[as]───→ boot.o ──┐
+                              ├──[ld]──→ kernel.bin ──[qemu]──→ 🖥️
+kernel.c ──[gcc]──→ kernel.o ─┘
                        ↑
                   linker.ld (控制記憶體佈局)
 ```
+
+### AT&T 語法速查
+
+| AT&T | Intel | 說明 |
+|------|-------|------|
+| `movl $1, %eax` | `mov eax, 1` | 來源在左，目的在右 |
+| `movl %eax, %cr0` | `mov cr0, eax` | 暫存器前面加 % |
+| `$0x08` | `0x08` | 立即值前面加 $ |
+| `(%edi)` | `[edi]` | 記憶體用小括號 |
+| `ljmp $0x08, $label` | `jmp 0x08:label` | 遠跳轉語法 |
 
 ## 🤔 思考題
 

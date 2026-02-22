@@ -14,6 +14,8 @@ CPU 開機後的第一個程式——512 bytes 的 boot sector。
 
 ## 🔧 編譯 & 執行
 
+使用 GNU 工具鏈（跟 Linux kernel / xv6 一致）：
+
 ```bash
 chmod +x build.sh
 ./build.sh
@@ -33,21 +35,31 @@ Hello from Real Mode! This is your CPU speaking from 1978.
 
 | 行 | 說明 |
 |----|------|
-| `[bits 16]` | 告訴組譯器產生 16-bit 指令 |
-| `[org 0x7C00]` | 設定程式起始位址為 0x7C00（BIOS 載入位置） |
-| `xor ax, ax` | AX 清零，用來初始化 segment registers |
-| `mov ds, ax` | Data Segment = 0，讓資料存取使用絕對位址 |
-| `mov sp, 0x7C00` | Stack Pointer 設在 0x7C00，向下生長 |
+| `.code16` | 告訴組譯器產生 16-bit 指令 |
+| `-Ttext=0x7C00` | 設定程式起始位址為 0x7C00（BIOS 載入位置） |
+| `xorw %ax, %ax` | AX 清零，用來初始化 segment registers |
+| `movw %ax, %ds` | Data Segment = 0，讓資料存取使用絕對位址 |
+| `movw $0x7C00, %sp` | Stack Pointer 設在 0x7C00，向下生長 |
 | `lodsb` | 從 [DS:SI] 讀一個 byte 到 AL，SI 自動加 1 |
-| `int 0x10` | 呼叫 BIOS 影片中斷，AH=0Eh 印一個字元 |
+| `int $0x10` | 呼叫 BIOS 影片中斷，AH=0Eh 印一個字元 |
 | `hlt` | 停止 CPU 執行 |
-| `times 510-($-$$) db 0` | 用 0 填充到 510 bytes |
-| `dw 0xAA55` | Boot Signature，BIOS 識別可開機磁碟的標誌 |
+| `.org 510` | 用 0 填充到 510 bytes |
+| `.word 0xAA55` | Boot Signature，BIOS 識別可開機磁碟的標誌 |
+
+### AT&T 語法速查
+
+| AT&T | Intel | 說明 |
+|------|-------|------|
+| `movl $1, %eax` | `mov eax, 1` | 來源在左，目的在右 |
+| `movl %eax, %cr0` | `mov cr0, eax` | 暫存器前面加 % |
+| `$0x08` | `0x08` | 立即值前面加 $ |
+| `(%edi)` | `[edi]` | 記憶體用小括號 |
+| `ljmp $0x08, $label` | `jmp 0x08:label` | 遠跳轉語法 |
 
 ## 🤔 思考題
 
-1. 為什麼 `org` 是 `0x7C00` 而不是 `0x0000`？
+1. 為什麼用 `-Ttext=0x7C00` 而不是在原始碼裡寫 `org`？
 2. 如果把 `0xAA55` 拿掉會怎樣？
 3. `SP` 為什麼設在 `0x7C00`？Stack 往哪個方向生長？
 4. 為什麼要設 `DS = 0`？如果不設會怎樣？
-5. `lodsb` 和 `mov al, [si]` + `inc si` 有什麼差別？
+5. `lodsb` 和 `movb (%si), %al` + `inc %si` 有什麼差別？

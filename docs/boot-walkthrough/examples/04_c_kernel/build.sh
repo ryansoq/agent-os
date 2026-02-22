@@ -5,11 +5,16 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR"
 
+echo "📝 使用 GNU 工具鏈（跟 Linux kernel / xv6 一致）"
+echo "   as  = GNU Assembler（AT&T 語法）"
+echo "   ld  = GNU Linker"
+echo "   gcc = GNU C Compiler"
+
 echo "🔧 編譯 04_c_kernel..."
 
-# 🔑 Step 1: 組譯 boot.asm → boot.o (ELF32 格式)
-echo "  [NASM] boot.asm → boot.o"
-nasm -f elf32 boot.asm -o boot.o
+# 🔑 Step 1: 組譯 boot.S → boot.o (ELF32 格式)
+echo "  [AS] boot.S → boot.o"
+as --32 boot.S -o boot.o
 
 # 🔑 Step 2: 編譯 kernel.c → kernel.o
 # -m32: 產生 32-bit 程式碼

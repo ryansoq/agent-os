@@ -3,7 +3,7 @@
  * 🔑 Kernel 載入位址從 1MB (0x100000) 開始 — 這是 Multiboot 的慣例
  */
 
-ENTRY(_start)           /* 🔑 程式進入點是 boot.asm 的 _start */
+ENTRY(_start)           /* 🔑 程式進入點是 boot.S 的 _start */
 
 SECTIONS {
     /* 🔑 從 1MB 開始放 kernel（低於 1MB 是 BIOS、VGA 等硬體區域） */
@@ -21,7 +21,7 @@ SECTIONS {
 
     /* 🔑 .rodata = 唯讀資料（字串常數等） */
     .rodata BLOCK(4K) : ALIGN(4K) {
-        *(.rodata)
+        *(.rodata*)
     }
 
     /* 🔑 .data = 已初始化的全域變數 */
@@ -33,5 +33,12 @@ SECTIONS {
     .bss BLOCK(4K) : ALIGN(4K) {
         *(COMMON)
         *(.bss)
+    }
+
+    /* 丟棄不需要的 section */
+    /DISCARD/ : {
+        *(.comment)
+        *(.note*)
+        *(.eh_frame)
     }
 }
