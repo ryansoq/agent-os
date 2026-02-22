@@ -112,7 +112,7 @@ updateSize();
 const buildTerm = new Terminal({
   theme: { background: '#000', foreground: '#c8d6e5', cursor: '#00e5a0' },
   fontSize: 13,
-  fontFamily: "'Noto Sans Mono CJK TC', 'Microsoft JhengHei', 'PingFang TC', 'SF Mono', 'Consolas', monospace",
+  fontFamily: "'Menlo', 'Consolas', 'DejaVu Sans Mono', monospace",
   cursorBlink: false,
   disableStdin: true,
   scrollback: 5000,
@@ -206,7 +206,7 @@ function bootVM() {
     vmTerm = new Terminal({
       theme: { background: '#1a1a2e', foreground: '#e0e0e0', cursor: '#00e5a0' },
       fontSize: 13,
-      fontFamily: "'Noto Sans Mono CJK TC', 'Microsoft JhengHei', 'PingFang TC', 'SF Mono', 'Consolas', monospace",
+      fontFamily: "'Menlo', 'Consolas', 'DejaVu Sans Mono', monospace",
       cursorBlink: true,
       scrollback: 5000,
     });
