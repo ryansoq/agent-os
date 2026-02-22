@@ -1,0 +1,18 @@
+#!/bin/sh
+# Agent OS — Auto-start agent on boot
+
+case "$1" in
+  start)
+    echo "🤖 Starting Agent OS..."
+    # Configure network
+    dhcpcd eth0 &
+    # Start agent (interactive on serial console)
+    ;;
+  stop)
+    echo "Stopping Agent OS..."
+    ;;
+  *)
+    echo "Usage: $0 {start|stop}"
+    exit 1
+    ;;
+esac

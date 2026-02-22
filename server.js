@@ -2,7 +2,94 @@
 const express = require('express');
 const http = require('http');
 const { WebSocketServer } = require('ws');
+const { spawn } = require('child_process');
 const path = require('path');
+
+// ===== QEMU VM 管理 =====
+let qemuProcess = null;
+let vmClients = new Set(); // WebSocket clients watching VM
+
+function startQEMU(ws) {
+  // 如果已經有 QEMU 在跑，先停掉
+  if (qemuProcess && !qemuProcess.killed) {
+    qemuProcess.kill('SIGKILL');
+    qemuProcess = null;
+    vmClients.clear();
+  }
+  // 確保沒有殘留的 QEMU 進程佔著 disk image lock
+  try {
+    require('child_process').spawnSync('pkill', ['-9', '-f', 'qemu-system'], {stdio:'ignore'});
+  } catch(e) {}
+
+  const KERNEL = process.env.AGENTOS_KERNEL || path.join(__dirname, 'images/bzImage');
+  const ROOTFS = process.env.AGENTOS_ROOTFS || path.join(__dirname, 'images/rootfs.ext2');
+
+  // 檢查 image 是否存在
+  const fs = require('fs');
+  if (!fs.existsSync(KERNEL) || !fs.existsSync(ROOTFS)) {
+    ws.send(JSON.stringify({ type: 'vm-output', text: '\r\n\x1b[31m[錯誤] 找不到 kernel 或 rootfs image\x1b[0m\r\n' }));
+    ws.send(JSON.stringify({ type: 'vm-output', text: `\x1b[33m  Kernel: ${KERNEL}\x1b[0m\r\n` }));
+    ws.send(JSON.stringify({ type: 'vm-output', text: `\x1b[33m  Rootfs: ${ROOTFS}\x1b[0m\r\n` }));
+    ws.send(JSON.stringify({ type: 'vm-output', text: '\r\n\x1b[36m請先完成 Buildroot 編譯，或設定 AGENTOS_KERNEL / AGENTOS_ROOTFS 環境變數\x1b[0m\r\n' }));
+    return;
+  }
+
+  console.log(`啟動 QEMU: kernel=${KERNEL} rootfs=${ROOTFS}`);
+
+  qemuProcess = spawn('qemu-system-x86_64', [
+    '-kernel', KERNEL,
+    '-drive', `file=${ROOTFS},format=raw,if=virtio`,
+    '-append', 'root=/dev/vda console=ttyS0 rw',
+    '-nographic',
+    '-m', '256M',
+    '-smp', '2',
+    '-net', 'nic,model=virtio',
+    '-net', 'user',
+    '-no-reboot'
+  ], {
+    stdio: ['pipe', 'pipe', 'pipe']
+  });
+
+  vmClients.add(ws);
+
+  qemuProcess.stdout.on('data', (data) => {
+    const text = data.toString();
+    for (const client of vmClients) {
+      if (client.readyState === 1) {
+        client.send(JSON.stringify({ type: 'vm-output', text }));
+      }
+    }
+  });
+
+  qemuProcess.stderr.on('data', (data) => {
+    const text = data.toString();
+    for (const client of vmClients) {
+      if (client.readyState === 1) {
+        client.send(JSON.stringify({ type: 'vm-output', text }));
+      }
+    }
+  });
+
+  qemuProcess.on('exit', (code) => {
+    console.log(`QEMU 結束 (code: ${code})`);
+    for (const client of vmClients) {
+      if (client.readyState === 1) {
+        client.send(JSON.stringify({ type: 'vm-exit', code }));
+      }
+    }
+    qemuProcess = null;
+    vmClients.clear();
+  });
+}
+
+function stopQEMU() {
+  if (qemuProcess && !qemuProcess.killed) {
+    qemuProcess.kill('SIGTERM');
+    setTimeout(() => {
+      if (qemuProcess && !qemuProcess.killed) qemuProcess.kill('SIGKILL');
+    }, 3000);
+  }
+}
 
 const app = express();
 const server = http.createServer(app);
@@ -271,12 +358,28 @@ wss.on('connection', (ws) => {
         }
         sendNext();
       }
+      
+      // VM 控制
+      if (msg.type === 'vm-start') {
+        startQEMU(ws);
+      }
+      
+      if (msg.type === 'vm-input' && qemuProcess && !qemuProcess.killed) {
+        qemuProcess.stdin.write(msg.text);
+      }
+      
+      if (msg.type === 'vm-stop') {
+        stopQEMU();
+      }
     } catch (e) {
       console.error('訊息解析錯誤:', e);
     }
   });
 
-  ws.on('close', () => console.log('用戶端已斷線'));
+  ws.on('close', () => {
+    vmClients.delete(ws);
+    console.log('用戶端已斷線');
+  });
 });
 
 // 啟動伺服器

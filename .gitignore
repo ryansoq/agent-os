@@ -1,4 +1,3 @@
 node_modules/
-images/*.bin
-images/*.img
+images/
 *.log

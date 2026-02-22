@@ -132,6 +132,13 @@ function connectWS() {
     const msg = JSON.parse(e.data);
     if (msg.type === 'log') buildTerm.writeln(msg.text);
     if (msg.text && msg.text.includes('建構完成')) buildDone();
+    // VM output → vmTerm
+    if (msg.type === 'vm-output' && vmTerm) vmTerm.write(msg.text);
+    if (msg.type === 'vm-exit') {
+      if (vmTerm) vmTerm.writeln('\r\n\x1b[31m[VM 已關機]\x1b[0m');
+      vmRunning = false;
+      document.getElementById('btnBoot').textContent = '🚀 啟動 VM';
+    }
   };
   ws.onclose = () => setTimeout(connectWS, 3000);
 }
@@ -184,14 +191,62 @@ function buildDone() {
   document.getElementById('btnBoot').disabled = false;
 }
 
-// ===== 啟動 VM =====
+// ===== VM Terminal (QEMU via WebSocket) =====
+let vmTerm = null;
+let vmRunning = false;
+
 function bootVM() {
   const ph = document.getElementById('vmPlaceholder');
   const vs = document.getElementById('vmScreen');
   ph.style.display = 'none';
   vs.style.display = 'block';
-  vs.innerHTML = `<iframe src="https://copy.sh/v86/?profile=linux26" allow="cross-origin-isolated"></iframe>`;
+  
+  if (!vmTerm) {
+    vs.innerHTML = '<div id="vmTerminal" style="width:100%;height:100%"></div>';
+    vmTerm = new Terminal({
+      theme: { background: '#1a1a2e', foreground: '#e0e0e0', cursor: '#00e5a0' },
+      fontSize: 13,
+      fontFamily: "'SF Mono', 'Fira Code', 'Consolas', monospace",
+      cursorBlink: true,
+      scrollback: 5000,
+    });
+    vmTerm.open(document.getElementById('vmTerminal'));
+    
+    // 鍵盤輸入 → WebSocket → QEMU stdin
+    vmTerm.onData((data) => {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'vm-input', text: data }));
+      }
+    });
+  } else {
+    vmTerm.clear();
+  }
+  
+  // 如果已經在跑，先停
+  if (vmRunning && ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type: 'vm-stop' }));
+    setTimeout(() => {
+      ws.send(JSON.stringify({ type: 'vm-start' }));
+    }, 1000);
+  } else if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type: 'vm-start' }));
+  }
+  
+  vmRunning = true;
   document.getElementById('btnBoot').textContent = '🔄 重新啟動';
+  document.getElementById('vmInputBar').style.display = 'flex';
+}
+
+// 手機輸入框 → QEMU
+function sendVmInput() {
+  const input = document.getElementById('vmInput');
+  const text = input.value;
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type: 'vm-input', text: text + '\n' }));
+  }
+  if (vmTerm) vmTerm.write(text + '\r\n');
+  input.value = '';
+  input.focus();
 }
 
 // ===== 匯出設定 =====
