@@ -52,8 +52,8 @@ Agent OS Builder 讓你像組裝電腦一樣，勾選你要的元件，一鍵編
 ## 🚀 Quick Start
 
 ```bash
-# 1. Clone
-git clone https://github.com/ryansoq/agent-os.git
+# 1. Clone（含 Buildroot submodule）
+git clone --recursive https://github.com/ryansoq/agent-os.git
 cd agent-os
 
 # 2. 安裝依賴
