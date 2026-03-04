@@ -1,0 +1,18 @@
+在 proc.c 的 scheduler() 裡加上以下程式碼觀察 context switch：
+
+在 swtch() 前後各加一行 cprintf：
+
+      c->proc = p;
+      switchuvm(p);
+      p->state = RUNNING;
+
++     cprintf("[SCHED] CPU %d: switch to pid %d (%s)\n",
++             cpuid(), p->pid, p->name);
+
+      swtch(&(c->scheduler), p->context);
+
++     cprintf("[SCHED] CPU %d: back from pid %d (%s)\n",
++             cpuid(), p->pid, p->name);
+
+      switchkvm();
+      c->proc = 0;

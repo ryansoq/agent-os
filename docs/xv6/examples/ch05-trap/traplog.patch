@@ -1,0 +1,13 @@
+在 trap.c 的 trap() 函數開頭加上以下程式碼來觀察 trap：
+
+--- a/trap.c
++++ b/trap.c
+@@ trap() 函數開頭
++  // 🔍 Debug: 印出 trap 資訊
++  if(tf->trapno == T_SYSCALL) {
++    cprintf("[TRAP] syscall from pid %d, eax=%d (CS=0x%x CPL=%d)\n",
++            myproc()->pid, tf->eax, tf->cs, tf->cs & 3);
++  } else if(tf->trapno != T_IRQ0 + IRQ_TIMER) {
++    cprintf("[TRAP] trapno=%d from CS=0x%x (CPL=%d)\n",
++            tf->trapno, tf->cs, tf->cs & 3);
++  }
