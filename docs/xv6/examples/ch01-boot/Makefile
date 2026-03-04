@@ -1,11 +1,14 @@
-all: boot.bin
+QEMU = qemu-system-i386
 
-boot.bin: boot.S
-	as --32 -o boot.o boot.S
-	ld -m elf_i386 -Ttext 0x7c00 --oformat binary -o boot.bin boot.o
+.PHONY: run clean
 
-run: boot.bin
-	qemu-system-i386 -drive format=raw,file=boot.bin -nographic
+boot.img: boot.S
+	gcc -m32 -nostdinc -c -o boot.o boot.S
+	ld -m elf_i386 -Ttext 0x7C00 --oformat binary -o $@ boot.o
+
+# 跑起來！按 Ctrl-A X 離開
+run: boot.img
+	$(QEMU) -nographic -drive file=boot.img,format=raw
 
 clean:
-	rm -f boot.o boot.bin
+	rm -f *.o *.img

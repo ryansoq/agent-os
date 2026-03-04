@@ -1,56 +1,39 @@
-# 最小 x86 bootloader：Real Mode → Protected Mode → 印 "Hi"
+# ============================================================
+# 最小 x86 boot sector：印出 "Hello from x86!"
+#
+# BIOS 把這 512 bytes 載入到 0x7C00 執行
+# CPU 處於 Real Mode，16-bit
+# ============================================================
 
 .code16
-.globl _start
-_start:
-  cli
-  xorw    %ax, %ax
-  movw    %ax, %ds
-  movw    %ax, %es
-  movw    %ax, %ss
-  lgdt    gdtdesc
-  movl    %cr0, %eax
-  orl     $0x1, %eax
-  movl    %eax, %cr0
-  ljmp    $0x08, $pm_start
+.globl start
+start:
+    cli                         # 關中斷
 
-.code32
-pm_start:
-  movw    $0x10, %ax
-  movw    %ax, %ds
-  movw    %ax, %es
-  movw    %ax, %ss
+    # 清零段暫存器
+    xorw    %ax, %ax
+    movw    %ax, %ds
+    movw    %ax, %es
 
-  # VGA text buffer
-  movb    $'H', 0xB8000
-  movb    $0x0A, 0xB8001
-  movb    $'i', 0xB8002
-  movb    $0x0A, 0xB8003
+    # 用 BIOS 中斷 INT 0x10 逐字印出訊息
+    movw    $message, %si       # SI = 字串指標
 
-  # Serial port (COM1)
-  movw    $0x3F8, %dx
-  movb    $'H', %al
-  outb    %al, %dx
-  movb    $'i', %al
-  outb    %al, %dx
-  movb    $'\r', %al
-  outb    %al, %dx
-  movb    $'\n', %al
-  outb    %al, %dx
+print_loop:
+    lodsb                       # AL = [SI], SI++
+    orb     %al, %al           # AL == 0?
+    jz      done                # 是 → 結束
 
-spin:
-  hlt
-  jmp     spin
+    movb    $0x0e, %ah         # AH = 0x0E = teletype output
+    int     $0x10              # BIOS 中斷：印一個字元
+    jmp     print_loop
 
-.p2align 2
-gdt:
-  .quad 0
-  .quad 0x00CF9A000000FFFF
-  .quad 0x00CF92000000FFFF
+done:
+    hlt                         # CPU 停機
+    jmp     done
 
-gdtdesc:
-  .word (gdtdesc - gdt - 1)
-  .long gdt
+message:
+    .asciz "Hello from x86 boot sector!\r\n"
 
-.fill 510 - (. - _start), 1, 0
-.word 0xAA55
+# 填充到 510 bytes，加上 boot 簽名
+.org 510
+.word 0xAA55                    # BIOS 辨認的 boot 簽名（little-endian）
