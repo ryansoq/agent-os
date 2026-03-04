@@ -1,0 +1,60 @@
+--- a/main.c
++++ b/main.c
+@@ -8,27 +8,46 @@
+ extern char end[]; // first address after kernel loaded from ELF file
+ 
+ int
+ main(void)
+ {
+-  kinit1(end, P2V(4*1024*1024)); // phys page allocator
+-  kvmalloc();      // kernel page table
+-  mpinit();        // detect other processors
+-  lapicinit();     // interrupt controller
+-  seginit();       // segment descriptors
+-  picinit();       // disable pic
+-  ioapicinit();    // another interrupt controller
+-  consoleinit();   // console hardware
+-  uartinit();      // serial port
+-  pinit();         // process table
+-  tvinit();        // trap vectors
+-  binit();         // buffer cache
+-  fileinit();      // file table
+-  ideinit();       // disk 
+-  startothers();   // start other processors
+-  kinit2(P2V(4*1024*1024), P2V(PHYSTOP)); // must come after startothers()
+-  userinit();      // first user process
++  cprintf("[main] kinit1...\n");
++  kinit1(end, P2V(4*1024*1024));
++  cprintf("[main] kinit1 done\n");
++  cprintf("[main] kvmalloc...\n");
++  kvmalloc();
++  cprintf("[main] kvmalloc done\n");
++  cprintf("[main] mpinit...\n");
++  mpinit();
++  cprintf("[main] mpinit done\n");
++  cprintf("[main] lapicinit...\n");
++  lapicinit();
++  cprintf("[main] lapicinit done\n");
++  cprintf("[main] seginit...\n");
++  seginit();
++  cprintf("[main] seginit done\n");
++  picinit();
++  ioapicinit();
++  consoleinit();
++  uartinit();
++  cprintf("[main] pinit...\n");
++  pinit();
++  cprintf("[main] tvinit...\n");
++  tvinit();
++  cprintf("[main] tvinit done\n");
++  binit();
++  fileinit();
++  ideinit();
++  startothers();
++  kinit2(P2V(4*1024*1024), P2V(PHYSTOP));
++  cprintf("[main] userinit...\n");
++  userinit();
++  cprintf("[main] userinit done\n");
++  cprintf("[main] starting scheduler\n");
+   mpmain();        // finish this processor's setup
+ }

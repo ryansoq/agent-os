@@ -1,0 +1,14 @@
+--- a/main.c
++++ b/main.c
+@@ -11,8 +11,9 @@
+ int
+ main(void)
+ {
+-  kinit1(end, P2V(4*1024*1024)); // phys page allocator
+-  kvmalloc();      // kernel page table
++  // 故意調換順序：先 kvmalloc 再 kinit1 → 會 crash！
++  kvmalloc();      // ← 需要 kalloc，但 kinit1 還沒跑！
++  kinit1(end, P2V(4*1024*1024));
+   mpinit();        // detect other processors
+   lapicinit();     // interrupt controller
+   seginit();       // segment descriptors
