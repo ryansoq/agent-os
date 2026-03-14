@@ -1,0 +1,25 @@
+{
+  "name": "mini-agent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@mariozechner/mini-lit": "latest",
+    "@mariozechner/pi-agent-core": "latest",
+    "@mariozechner/pi-ai": "latest",
+    "@mariozechner/pi-web-ui": "latest",
+    "@sinclair/typebox": "^0.34.48",
+    "@tailwindcss/vite": "^4.1.17",
+    "lit": "^3.3.1",
+    "lucide": "^0.544.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3",
+    "vite": "^7.1.6"
+  }
+}

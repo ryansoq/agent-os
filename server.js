@@ -96,6 +96,7 @@ const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
 // 靜態檔案服務
+app.use('/mini-agent', express.static(path.join(__dirname, 'mini-agent/dist')));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ===== v0.2 三層編譯 log =====
